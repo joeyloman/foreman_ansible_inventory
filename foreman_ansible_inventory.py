@@ -386,6 +386,7 @@ class ForemanInventory(object):
         else:
             return json.dumps(data)
 
+
 if __name__ == '__main__':
     inv = ForemanInventory()
     sys.exit(not inv.run())
