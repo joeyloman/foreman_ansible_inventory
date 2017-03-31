@@ -346,21 +346,16 @@ class ForemanInventory(object):
                     except KeyError:
                         pass  # Host not part of this group
 
+                try:
+                    if params['ansible_ssh_extra_args']:
+                        self.toplevel_params[dns_name] = { 'ansible_ssh_extra_args': params['ansible_ssh_extra_args'] }
+                except KeyError:
+                    continue
+
                 self.cache[dns_name] = host
                 self.params[dns_name] = params
                 self.facts[dns_name] = self._get_facts(host)
                 self.push(self.inventory, 'all', dns_name)
-
-            try:
-                if params['ansible_ssh_extra_args']:
-                    self.toplevel_params[dns_name] = { 'ansible_ssh_extra_args': params['ansible_ssh_extra_args'] }
-            except KeyError:
-                continue
-
-            self.cache[dns_name] = host
-            self.params[dns_name] = params
-            self.facts[dns_name] = self._get_facts(host)
-            self.push(self.inventory, 'all', dns_name)
         self._write_cache()
 
     def _write_cache(self):
