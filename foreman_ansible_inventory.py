@@ -51,6 +51,7 @@ class ForemanInventory(object):
         self.inventory = dict()  # A list of groups and the hosts in that group
         self.cache = dict()   # Details about hosts in the inventory
         self.params = dict()  # Params of each host
+        self.toplevel_params = dict()  # Toplevel Params of each host
         self.facts = dict()   # Facts of each host
         self.hostgroups = dict()  # host groups
         self.session = None   # Requests session
@@ -91,6 +92,12 @@ class ForemanInventory(object):
                     'foreman': self.cache[hostname],
                     'foreman_params': self.params[hostname],
                 }
+
+                try:
+                    self.inventory['_meta']['hostvars'][hostname].update(self.toplevel_params[hostname])
+                except:
+                    continue
+
                 if self.want_facts:
                     self.inventory['_meta']['hostvars'][hostname]['foreman_facts'] = self.facts[hostname]
 
@@ -106,7 +113,8 @@ class ForemanInventory(object):
             if (mod_time + self.cache_max_age) > current_time:
                 if (os.path.isfile(self.cache_path_inventory) and
                     os.path.isfile(self.cache_path_params) and
-                        os.path.isfile(self.cache_path_facts)):
+                        os.path.isfile(self.cache_path_toplevel_params) and
+                            os.path.isfile(self.cache_path_facts)):
                     return True
         return False
 
@@ -157,6 +165,7 @@ class ForemanInventory(object):
         self.cache_path_cache = cache_path + "/%s.cache" % script
         self.cache_path_inventory = cache_path + "/%s.index" % script
         self.cache_path_params = cache_path + "/%s.params" % script
+        self.cache_path_toplevel_params = cache_path + "/%s.toplevel_params" % script
         self.cache_path_facts = cache_path + "/%s.facts" % script
         try:
             self.cache_max_age = config.getint('cache', 'max_age')
@@ -301,6 +310,12 @@ class ForemanInventory(object):
                 except KeyError:
                     pass  # Host not part of this group
 
+            try:
+                if params['ansible_ssh_extra_args']:
+                    self.toplevel_params[dns_name] = { 'ansible_ssh_extra_args': params['ansible_ssh_extra_args'] }
+            except KeyError:
+                continue
+
             self.cache[dns_name] = host
             self.params[dns_name] = params
             self.facts[dns_name] = self._get_facts(host)
@@ -311,6 +326,7 @@ class ForemanInventory(object):
         self.write_to_cache(self.cache, self.cache_path_cache)
         self.write_to_cache(self.inventory, self.cache_path_inventory)
         self.write_to_cache(self.params, self.cache_path_params)
+        self.write_to_cache(self.toplevel_params, self.cache_path_toplevel_params)
         self.write_to_cache(self.facts, self.cache_path_facts)
 
     def get_host_info(self):
@@ -349,6 +365,13 @@ class ForemanInventory(object):
         cache = open(self.cache_path_params, 'r')
         json_params = cache.read()
         self.params = json.loads(json_params)
+
+    def load_toplevel_params_from_cache(self):
+        """Read the index from the cache file sets self.index"""
+
+        cache = open(self.cache_path_toplevel_params, 'r')
+        json_params = cache.read()
+        self.top_levelparams = json.loads(json_params)
 
     def load_facts_from_cache(self):
         """Read the index from the cache file sets self.facts"""
