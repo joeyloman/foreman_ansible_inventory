@@ -353,7 +353,7 @@ class ForemanInventory(object):
                     if params['ansible_ssh_extra_args']:
                         self.toplevel_params[dns_name] = { 'ansible_ssh_extra_args': params['ansible_ssh_extra_args'] }
                 except KeyError:
-                    continue
+                    pass
 
                 self.cache[dns_name] = host
                 self.params[dns_name] = params
