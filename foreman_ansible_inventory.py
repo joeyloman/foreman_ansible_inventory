@@ -325,13 +325,6 @@ class ForemanInventory(object):
 
                 params = self._resolve_params(host)
 
-                # Create ansible groups for server_appgroup host parameters
-                group = 'server_appgroup'
-                val = params.get(group)
-                if val:
-                    safe_key = self.to_safe('%s%s_%s' % (self.group_prefix, group, val.lower()))
-                    self.push(self.inventory, safe_key, dns_name)
-
                 # Ansible groups by parameters in host groups and Foreman host
                 # attributes.
                 groupby = copy.copy(params)
